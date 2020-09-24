@@ -62,6 +62,7 @@ enum {
   INSTRUMENT_INSTRIM = 3,
   INSTRUMENT_CFG = 3,
   INSTRUMENT_LTO = 4,
+  INSTRUMENT_COLL = 5,
   INSTRUMENT_OPT_CTX = 8,
   INSTRUMENT_OPT_NGRAM = 16
 
@@ -361,6 +362,9 @@ static void edit_params(u32 argc, char **argv, char **envp) {
     if (instrument_mode == INSTRUMENT_CFG)
       cc_params[cc_par_cnt++] =
           alloc_printf("-Wl,-mllvm=-load=%s/SanitizerCoverageLTO.so", obj_path);
+    else if (instrument_mode == INSTRUMENT_COLL)
+      cc_params[cc_par_cnt++] = alloc_printf(
+          "-Wl,-mllvm=-load=%s/afl-llvm-coll-instrumentation.so", obj_path);
     else
 
       cc_params[cc_par_cnt++] = alloc_printf(
@@ -797,6 +801,17 @@ int main(int argc, char **argv, char **envp) {
         lto_mode = 1;
         if (!instrument_mode || instrument_mode == INSTRUMENT_LTO)
           instrument_mode = INSTRUMENT_LTO;
+        else if (instrument_mode != INSTRUMENT_CFG)
+          FATAL("main instrumentation mode already set with %s",
+                instrument_mode_string[instrument_mode]);
+
+      }
+
+      if (strncasecmp(ptr, "coll", strlen("coll")) == 0) {
+
+        lto_mode = 1;
+        if (!instrument_mode || instrument_mode == INSTRUMENT_COLL)
+          instrument_mode = INSTRUMENT_COLL;
         else if (instrument_mode != INSTRUMENT_CFG)
           FATAL("main instrumentation mode already set with %s",
                 instrument_mode_string[instrument_mode]);
